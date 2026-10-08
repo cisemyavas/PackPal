@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 import TripsStack from "./TripsStack";
 import SettingsScreen from "../screens/SettingsScreen";
+import ProfileScreen from "../screens/ProfileScreen";
 
 const Tab = createBottomTabNavigator();
 
@@ -21,6 +22,17 @@ export default function RootNavigator() {
               size={size}
               color={color}
             />
+          ),
+        }}
+      />
+
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          title: "Profile",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person-circle-outline" size={size} color={color} />
           ),
         }}
       />

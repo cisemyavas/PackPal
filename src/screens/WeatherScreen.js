@@ -1,4 +1,6 @@
+
 import {
+  AppState,
   FlatList,
   StyleSheet,
   Text,
@@ -10,9 +12,14 @@ import {
 } from "react-native-safe-area-context";
 
 import {
-  useEffect,
+  useCallback,
+  useRef,
   useState,
 } from "react";
+
+import {
+  useFocusEffect,
+} from "@react-navigation/native";
 
 import {
   Ionicons,
@@ -33,6 +40,10 @@ import {
   COLORS,
 } from "../constants/colors";
 
+// ==========================================
+// DATE FORMAT
+// ==========================================
+
 function formatDate(date) {
   const value = new Date(
     `${date}T00:00:00`
@@ -48,73 +59,161 @@ function formatDate(date) {
   );
 }
 
-export default function WeatherScreen({
-  route,
-}) {
+// ==========================================
+// WEATHER SCREEN
+// ==========================================
+
+export default function WeatherScreen({ route }) {
   const { trips } = useTrips();
 
-  const { tripId } =
-    route.params || {};
+  const { tripId } = route.params || {};
 
   const trip = trips.find(
-    (item) =>
-      item.id === tripId
+    (item) => item.id === tripId
   );
 
-  const [forecast, setForecast] =
-    useState([]);
+  const destination = trip?.destination;
+  const startDate = trip?.startDate;
+  const endDate = trip?.endDate;
 
-  const [location, setLocation] =
-    useState(null);
+  // ==========================================
+  // STATES
+  // ==========================================
 
-  const [loading, setLoading] =
+  const [forecast, setForecast] = useState([]);
+  const [location, setLocation] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const [destinationFound, setDestinationFound] =
     useState(true);
 
-  const [error, setError] =
-    useState(null);
+  const [missingDays, setMissingDays] = useState(0);
 
-  const [
-    destinationFound,
-    setDestinationFound,
-  ] = useState(true);
+  // ==========================================
+  // REFS
+  // ==========================================
 
-  async function loadWeather() {
-    if (!trip) {
-      setLoading(false);
-      return;
-    }
+  const controllerRef = useRef(null);
+  const requestIdRef = useRef(0);
+
+  // ==========================================
+  // LOAD WEATHER
+  // ==========================================
+
+  const loadWeather = useCallback(async () => {
+    // Önceki isteğin daha sonra gelip
+    // yeni veriyi ezmesini önle.
+
+    const requestId = ++requestIdRef.current;
+
+    controllerRef.current?.abort();
+
+    const controller = new AbortController();
+    controllerRef.current = controller;
+
+    setLoading(true);
+    setError(null);
+    setDestinationFound(true);
+    setForecast([]);
+    setLocation(null);
+    setMissingDays(0);
 
     try {
-      setLoading(true);
-      setError(null);
-      setDestinationFound(true);
+      const result = await getWeatherForDestination(
+        destination,
+        startDate,
+        endDate,
+        { signal: controller.signal }
+      );
 
-      const result =
-  await getWeatherForDestination(
-    trip.destination
-  );
-
-      if (!result.found) {
-        setDestinationFound(false);
-        setForecast([]);
-        setLocation(null);
+      if (
+        controller.signal.aborted ||
+        requestId !== requestIdRef.current
+      ) {
         return;
       }
 
+      setDestinationFound(result.found);
       setLocation(result.location);
       setForecast(result.forecast);
-    } catch (error) {
-      setError(
-        "Weather information could not be loaded."
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
+      setMissingDays(result.missingDays);
 
-  useEffect(() => {
-    loadWeather();
-  }, [tripId]);
+    } catch (err) {
+      if (
+        controller.signal.aborted ||
+        requestId !== requestIdRef.current
+      ) {
+        return;
+      }
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Hava durumu alınamadı. Lütfen tekrar deneyin."
+      );
+
+    } finally {
+      if (
+        !controller.signal.aborted &&
+        requestId === requestIdRef.current
+      ) {
+        setLoading(false);
+      }
+    }
+
+  }, [tripId, destination, startDate, endDate]);
+
+  // ==========================================
+  // SCREEN FOCUS AND AUTO REFRESH
+  // ==========================================
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!destination) {
+        setLoading(false);
+        return;
+      }
+
+      void loadWeather();
+
+      let previousState = AppState.currentState;
+
+      const subscription = AppState.addEventListener(
+        "change",
+        (nextState) => {
+          const returnedToApp =
+            nextState === "active" &&
+            previousState !== "active";
+
+          previousState = nextState;
+
+          if (returnedToApp) {
+            void loadWeather();
+          }
+        }
+      );
+
+      const intervalId = setInterval(() => {
+        if (AppState.currentState === "active") {
+          void loadWeather();
+        }
+      }, 30 * 60 * 1000);
+
+      return () => {
+        subscription.remove();
+        clearInterval(intervalId);
+
+        ++requestIdRef.current;
+        controllerRef.current?.abort();
+      };
+
+    }, [destination, loadWeather])
+  );
+
+  // ==========================================
+  // ERROR AND LOADING STATES
+  // ==========================================
 
   if (!trip) {
     return (
@@ -125,10 +224,10 @@ export default function WeatherScreen({
   }
 
   if (loading) {
-  return (
-    <Loading message="Checking the weather..." />
-  );
-}
+    return (
+      <Loading message="Checking the weather..." />
+    );
+  }
 
   if (error) {
     return (
@@ -146,6 +245,10 @@ export default function WeatherScreen({
       />
     );
   }
+
+  // ==========================================
+  // MAIN SCREEN
+  // ==========================================
 
   return (
     <SafeAreaView
@@ -238,7 +341,7 @@ export default function WeatherScreen({
                     styles.forecastLabelText
                   }
                 >
-                  3-day forecast
+                  {formatDate(startDate)} – {formatDate(endDate)}
                 </Text>
               </View>
             </View>
@@ -259,8 +362,20 @@ export default function WeatherScreen({
               Check the weather before
               finishing your packing list.
             </Text>
+
+            {forecast.length > 0 && missingDays > 0 && (
+              <Text style={styles.sectionSubtitle}>
+                Seyahatinizin {missingDays} günü için tahmin
+                bulunmuyor. Mevcut günlerin tahminleri aşağıda
+                gösteriliyor.
+              </Text>
+            )}
           </View>
         }
+
+        // ==========================================
+        // WEATHER CARDS
+        // ==========================================
 
         renderItem={({ item }) => {
           const weather =
@@ -322,8 +437,7 @@ export default function WeatherScreen({
                     styles.maxTemp
                   }
                 >
-                  {item.maxTemperature !==
-                  null
+                  {item.maxTemperature !== null
                     ? `${item.maxTemperature}°`
                     : "-"}
                 </Text>
@@ -333,8 +447,7 @@ export default function WeatherScreen({
                     styles.minTemp
                   }
                 >
-                  {item.minTemperature !==
-                  null
+                  {item.minTemperature !== null
                     ? `${item.minTemperature}°`
                     : "-"}
                 </Text>
@@ -343,11 +456,15 @@ export default function WeatherScreen({
           );
         }}
 
+        // ==========================================
+        // EMPTY STATE
+        // ==========================================
+
         ListEmptyComponent={
           <EmptyState
             icon="cloud-offline-outline"
-            title="No forecast available"
-            message="Weather information is currently unavailable for this destination."
+            title="Hava durumu tahmini bulunmuyor"
+            message="Bu tarih aralığı için güncel tahmin mevcut değil. Gelecek tarihler için seyahatiniz yaklaştığında tekrar kontrol edin; bu ekran açıldığında tahminler otomatik yenilenir."
           />
         }
       />
@@ -355,216 +472,152 @@ export default function WeatherScreen({
   );
 }
 
-const styles =
-  StyleSheet.create({
-    container: {
-      flex: 1,
+// ==========================================
+// STYLES
+// ==========================================
 
-      backgroundColor:
-        COLORS.background,
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+
+  list: {
+    paddingHorizontal: 18,
+    paddingTop: 14,
+    paddingBottom: 36,
+  },
+
+  heroCard: {
+    padding: 22,
+    borderRadius: 22,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: "center",
+    shadowColor: "#000000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
     },
-
-    list: {
-      paddingHorizontal: 18,
-      paddingTop: 14,
-      paddingBottom: 36,
-    },
-
-    heroCard: {
-      padding: 22,
-
-      borderRadius: 22,
-
-      backgroundColor:
-        COLORS.surface,
-
-      borderWidth: 1,
-      borderColor:
-        COLORS.border,
-
-      alignItems: "center",
-
-      shadowColor: "#000000",
-      shadowOffset: {
-        width: 0,
-        height: 4,
-      },
-      shadowOpacity: 0.05,
-      shadowRadius: 10,
-
-      elevation: 2,
-    },
-
-    heroIcon: {
-      width: 62,
-      height: 62,
-
-      borderRadius: 20,
-
-      backgroundColor:
-        COLORS.primaryLight,
-
-      alignItems: "center",
-      justifyContent:
-        "center",
-
-      marginBottom: 13,
-    },
-
-    destination: {
-      fontSize: 25,
-
-      fontWeight: "800",
-
-      color: COLORS.text,
-
-      letterSpacing: -0.4,
-    },
-
-    locationRow: {
-      marginTop: 7,
-
-      flexDirection: "row",
-
-      alignItems: "center",
-
-      gap: 4,
-    },
-
-    location: {
-      fontSize: 13,
-
-      color:
-        COLORS.textSecondary,
-    },
-
-    forecastLabel: {
-      marginTop: 17,
-
-      paddingHorizontal: 12,
-      paddingVertical: 7,
-
-      borderRadius: 20,
-
-      backgroundColor:
-        COLORS.primaryLight,
-
-      flexDirection: "row",
-
-      alignItems: "center",
-
-      gap: 6,
-    },
-
-    forecastLabelText: {
-      fontSize: 12,
-
-      fontWeight: "700",
-
-      color:
-        COLORS.primaryDark,
-    },
-
-    sectionTitle: {
-      marginTop: 26,
-
-      fontSize: 21,
-
-      fontWeight: "800",
-
-      color: COLORS.text,
-    },
-
-    sectionSubtitle: {
-      marginTop: 4,
-      marginBottom: 14,
-
-      fontSize: 13,
-
-      lineHeight: 19,
-
-      color:
-        COLORS.textSecondary,
-    },
-
-    card: {
-      minHeight: 92,
-
-      padding: 15,
-
-      marginBottom: 10,
-
-      borderRadius: 17,
-
-      borderWidth: 1,
-      borderColor:
-        COLORS.border,
-
-      backgroundColor:
-        COLORS.surface,
-
-      flexDirection: "row",
-
-      alignItems: "center",
-    },
-
-    weatherIconBox: {
-      width: 48,
-      height: 48,
-
-      borderRadius: 15,
-
-      backgroundColor:
-        COLORS.primaryLight,
-
-      alignItems: "center",
-      justifyContent:
-        "center",
-
-      marginRight: 13,
-    },
-
-    dayInfo: {
-      flex: 1,
-    },
-
-    date: {
-      fontSize: 15,
-
-      fontWeight: "700",
-
-      color: COLORS.text,
-    },
-
-    weatherText: {
-      marginTop: 4,
-
-      fontSize: 13,
-
-      color:
-        COLORS.textSecondary,
-    },
-
-    temperature: {
-      minWidth: 55,
-
-      alignItems: "flex-end",
-    },
-
-    maxTemp: {
-      fontSize: 21,
-
-      fontWeight: "800",
-
-      color: COLORS.text,
-    },
-
-    minTemp: {
-      marginTop: 3,
-
-      fontSize: 13,
-
-      color:
-        COLORS.textMuted,
-    },
-  });
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+
+  heroIcon: {
+    width: 62,
+    height: 62,
+    borderRadius: 20,
+    backgroundColor: COLORS.primaryLight,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 13,
+  },
+
+  destination: {
+    fontSize: 25,
+    fontWeight: "800",
+    color: COLORS.text,
+    letterSpacing: -0.4,
+  },
+
+  locationRow: {
+    marginTop: 7,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+
+  location: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+  },
+
+  forecastLabel: {
+    marginTop: 17,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: COLORS.primaryLight,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+
+  forecastLabelText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: COLORS.primaryDark,
+  },
+
+  sectionTitle: {
+    marginTop: 26,
+    fontSize: 21,
+    fontWeight: "800",
+    color: COLORS.text,
+  },
+
+  sectionSubtitle: {
+    marginTop: 4,
+    marginBottom: 14,
+    fontSize: 13,
+    lineHeight: 19,
+    color: COLORS.textSecondary,
+  },
+
+  card: {
+    minHeight: 92,
+    padding: 15,
+    marginBottom: 10,
+    borderRadius: 17,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.surface,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  weatherIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 15,
+    backgroundColor: COLORS.primaryLight,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 13,
+  },
+
+  dayInfo: {
+    flex: 1,
+  },
+
+  date: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: COLORS.text,
+  },
+
+  weatherText: {
+    marginTop: 4,
+    fontSize: 13,
+    color: COLORS.textSecondary,
+  },
+
+  temperature: {
+    minWidth: 55,
+    alignItems: "flex-end",
+  },
+
+  maxTemp: {
+    fontSize: 21,
+    fontWeight: "800",
+    color: COLORS.text,
+  },
+
+  minTemp: {
+    marginTop: 3,
+    fontSize: 13,
+    color: COLORS.textMuted,
+  },
+});

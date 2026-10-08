@@ -16,12 +16,15 @@ import {
 } from "@expo/vector-icons";
 
 import useTrips from "../hooks/useTrips";
+import { useAuth } from "../context/AuthContext";
+import { logout } from "../services/authService";
 
 import {
   COLORS,
 } from "../constants/colors";
 
 export default function SettingsScreen() {
+  const { user } = useAuth();
   const {
     trips,
     clearTrips,
@@ -51,6 +54,13 @@ export default function SettingsScreen() {
         },
       ]
     );
+  }
+
+  function handleSignOut() {
+    Alert.alert("Sign out", "Are you sure you want to sign out?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Sign out", style: "destructive", onPress: () => logout().catch((error) => Alert.alert("Could not sign out", error.message)) },
+    ]);
   }
 
   return (
@@ -126,6 +136,17 @@ export default function SettingsScreen() {
 
         {/* DATA */}
 
+        <View style={styles.accountCard}>
+          <View style={styles.accountIcon}><Ionicons name="person-outline" size={19} color={COLORS.primary} /></View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.cardTitle}>{user?.displayName || "PackPal account"}</Text>
+            <Text style={styles.description}>{user?.email}</Text>
+          </View>
+          <Pressable onPress={handleSignOut} hitSlop={8}>
+            <Text style={styles.signOutText}>Sign out</Text>
+          </Pressable>
+        </View>
+
         <Text
           style={
             styles.sectionLabel
@@ -174,8 +195,7 @@ export default function SettingsScreen() {
                   styles.description
                 }
               >
-                Your trips are stored
-                locally on this device.
+                Your trips are saved securely to your account.
               </Text>
             </View>
 
@@ -345,7 +365,7 @@ export default function SettingsScreen() {
                   styles.infoTitle
                 }
               >
-                Local storage
+                Cloud sync
               </Text>
 
               <Text
@@ -353,9 +373,7 @@ export default function SettingsScreen() {
                   styles.description
                 }
               >
-                Trip information is saved
-                on your device using
-                AsyncStorage.
+                Your trips and packing lists are stored in your private Firestore account.
               </Text>
             </View>
           </View>
@@ -484,6 +502,13 @@ const styles =
       backgroundColor:
         COLORS.surface,
     },
+
+    accountCard: {
+      flexDirection: "row", alignItems: "center", padding: 15, marginBottom: 23,
+      borderRadius: 17, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface,
+    },
+    accountIcon: { width: 40, height: 40, borderRadius: 13, marginRight: 11, backgroundColor: COLORS.primaryLight, alignItems: "center", justifyContent: "center" },
+    signOutText: { color: COLORS.danger, fontWeight: "700", fontSize: 13 },
 
     dataHeader: {
       flexDirection: "row",

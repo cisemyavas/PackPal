@@ -1,6 +1,7 @@
 import {
   createContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -9,91 +10,109 @@ import {
   COMMON_ITEMS,
 } from "../constants/templates";
 
-import {
-  loadTrips,
-  saveTrips,
-  clearTripsStorage,
-} from "../services/storage";
+import { useAuth } from "./AuthContext";
+import { replaceUserTrips, subscribeToTrips } from "../services/firestoreService";
 
 const TripContext =
   createContext(null);
 
+function stableSerialize(value) {
+  if (Array.isArray(value)) {
+    return `[${value.map(stableSerialize).join(",")}]`;
+  }
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${stableSerialize(value[key])}`).join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
 export function TripProvider({
   children,
 }) {
+  const { user } = useAuth();
   const [trips, setTrips] =
     useState([]);
 
   const [loading, setLoading] =
     useState(true);
+  const [loadedUid, setLoadedUid] = useState(null);
 
   const [
     storageError,
     setStorageError,
   ] = useState(null);
+  const lastSyncedTrips = useRef(null);
 
   // ==========================================
   // INITIAL LOAD
   // ==========================================
 
   useEffect(() => {
-    async function initializeTrips() {
-      try {
-        setStorageError(null);
+    setTrips([]);
+    setLoadedUid(null);
+    lastSyncedTrips.current = null;
+    setStorageError(null);
 
-        const storedTrips =
-          await loadTrips();
-
-        setTrips(storedTrips);
-      } catch (error) {
-        setTrips([]);
-
-        setStorageError(
-          "Saved trips could not be loaded."
-        );
-      } finally {
-        setLoading(false);
-      }
+    if (!user) {
+      setLoading(false);
+      return undefined;
     }
 
-    initializeTrips();
-  }, []);
+    setLoading(true);
+    const unsubscribe = subscribeToTrips(
+      user.uid,
+      (storedTrips) => {
+        const serialized = stableSerialize(storedTrips);
+        lastSyncedTrips.current = serialized;
+        setTrips((current) => stableSerialize(current) === serialized ? current : storedTrips);
+        setLoadedUid(user.uid);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Firestore trips could not be loaded:", error);
+        setStorageError("Trips could not be loaded from your account.");
+        setLoading(false);
+      }
+    );
+
+    return unsubscribe;
+  }, [user?.uid]);
 
   // ==========================================
   // SAVE AFTER STATE CHANGE
   // ==========================================
 
   useEffect(() => {
-    if (loading) {
+    if (loading || !user || loadedUid !== user.uid) {
       return;
     }
 
     async function persistTrips() {
       try {
-        await saveTrips(trips);
+        const serialized = stableSerialize(trips);
+        if (serialized === lastSyncedTrips.current) return;
+        await replaceUserTrips(user.uid, trips);
+        lastSyncedTrips.current = serialized;
+        setStorageError(null);
       } catch (error) {
+        console.error("Firestore trips could not be saved:", error);
         setStorageError(
-          "Your latest changes could not be saved."
+          "Your latest changes could not be saved to your account."
         );
       }
     }
 
     persistTrips();
-  }, [trips, loading]);
+  }, [trips, loading, user?.uid, loadedUid]);
 
   // ==========================================
   // REFRESH
   // ==========================================
 
   async function refreshTrips() {
+    // Firestore keeps this list in sync in real time.
     try {
       setStorageError(null);
-
-      const storedTrips =
-        await loadTrips();
-
-      setTrips(storedTrips);
-
       return true;
     } catch (error) {
       setStorageError(
@@ -303,9 +322,6 @@ export function TripProvider({
   async function clearTrips() {
     try {
       setStorageError(null);
-
-      await clearTripsStorage();
-
       setTrips([]);
 
       return true;
