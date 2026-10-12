@@ -1,3 +1,4 @@
+import { useTheme } from "../context/ThemeContext";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -22,10 +23,6 @@ import {
 } from "@expo/vector-icons";
 
 import useTrips from "../hooks/useTrips";
-
-import {
-  COLORS,
-} from "../constants/colors";
 
 const TRIP_TYPES = [
   {
@@ -58,6 +55,8 @@ const TRIP_TYPES = [
 export default function NewTripScreen({
   navigation,
 }) {
+  const { colors: COLORS } = useTheme();
+  const styles = createStyles(COLORS);
   const { addTrip } = useTrips();
 
   const [destination, setDestination] =
@@ -604,7 +603,8 @@ export default function NewTripScreen({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(COLORS) {
+  return StyleSheet.create({
   container: {
     flex: 1,
 
@@ -903,3 +903,4 @@ const styles = StyleSheet.create({
     ],
   },
 });
+}

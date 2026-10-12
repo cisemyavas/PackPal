@@ -1,3 +1,4 @@
+import { useTheme } from "../context/ThemeContext";
 import { useState } from "react";
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -5,9 +6,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../context/AuthContext";
 import { isFirebaseConfigured } from "../config/firebase";
 import { loginWithEmail, registerWithEmail } from "../services/authService";
-import { COLORS } from "../constants/colors";
-
 export default function LoginScreen() {
+  const { colors: COLORS } = useTheme();
+  const styles = createStyles(COLORS);
   const [isRegistering, setIsRegistering] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -81,10 +82,13 @@ export default function LoginScreen() {
 }
 
 function Field({ icon, ...props }) {
+  const { colors: COLORS } = useTheme();
+  const styles = createStyles(COLORS);
   return <View style={styles.inputWrap}><Ionicons name={icon} size={19} color={COLORS.textMuted} /><TextInput style={styles.input} placeholderTextColor={COLORS.textMuted} {...props} /></View>;
 }
 
-const styles = StyleSheet.create({
+function createStyles(COLORS) {
+  return StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background }, flex: { flex: 1 },
   content: { flexGrow: 1, justifyContent: "center", padding: 22, paddingBottom: 36 },
   logo: { alignSelf: "center", width: 58, height: 58, borderRadius: 20, backgroundColor: COLORS.primary, alignItems: "center", justifyContent: "center" },
@@ -99,3 +103,4 @@ const styles = StyleSheet.create({
   submitText: { color: "#fff", fontSize: 16, fontWeight: "700" }, pressed: { opacity: 0.85 }, disabled: { opacity: 0.65 },
   switch: { paddingTop: 18, alignItems: "center" }, switchText: { color: COLORS.textSecondary }, switchAction: { color: COLORS.primary, fontWeight: "700" },
 });
+}

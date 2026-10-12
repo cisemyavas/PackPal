@@ -1,3 +1,4 @@
+import { useTheme } from "../context/ThemeContext";
 
 import {
   AppState,
@@ -36,10 +37,6 @@ import {
   getWeatherInfo,
 } from "../services/weatherApi";
 
-import {
-  COLORS,
-} from "../constants/colors";
-
 // ==========================================
 // DATE FORMAT
 // ==========================================
@@ -64,6 +61,8 @@ function formatDate(date) {
 // ==========================================
 
 export default function WeatherScreen({ route }) {
+  const { colors: COLORS } = useTheme();
+  const styles = createStyles(COLORS);
   const { trips } = useTrips();
 
   const { tripId } = route.params || {};
@@ -476,7 +475,8 @@ export default function WeatherScreen({ route }) {
 // STYLES
 // ==========================================
 
-const styles = StyleSheet.create({
+function createStyles(COLORS) {
+  return StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
@@ -621,3 +621,4 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
   },
 });
+}

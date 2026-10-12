@@ -4,12 +4,39 @@ import { Ionicons } from "@expo/vector-icons";
 import TripsStack from "./TripsStack";
 import SettingsScreen from "../screens/SettingsScreen";
 import ProfileScreen from "../screens/ProfileScreen";
+import { useTheme } from "../context/ThemeContext";
 
 const Tab = createBottomTabNavigator();
 
 export default function RootNavigator() {
+  const { colors } = useTheme();
   return (
-    <Tab.Navigator>
+    <Tab.Navigator
+      screenOptions={{
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textMuted,
+        tabBarStyle: {
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
+          height: 68,
+          paddingTop: 8,
+          paddingBottom: 8,
+          marginHorizontal: 12,
+          marginBottom: 6,
+          borderRadius: 22,
+          elevation: 7,
+          shadowColor: "#000",
+          shadowOpacity: 0.08,
+          shadowRadius: 16,
+          shadowOffset: { width: 0, height: 5 },
+        },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: "700" },
+        headerStyle: { backgroundColor: colors.background },
+        headerTintColor: colors.text,
+        headerTitleStyle: { fontWeight: "800" },
+        headerShadowVisible: false,
+      }}
+    >
       <Tab.Screen
         name="TripsTab"
         component={TripsStack}

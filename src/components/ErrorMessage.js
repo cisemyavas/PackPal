@@ -1,3 +1,4 @@
+import { useTheme } from "../context/ThemeContext";
 import {
   Pressable,
   StyleSheet,
@@ -9,14 +10,12 @@ import {
   Ionicons,
 } from "@expo/vector-icons";
 
-import {
-  COLORS,
-} from "../constants/colors";
-
 export default function ErrorMessage({
   message,
   onRetry,
 }) {
+  const { colors: COLORS } = useTheme();
+  const styles = createStyles(COLORS);
   return (
     <View style={styles.container}>
       <View style={styles.card}>
@@ -64,7 +63,8 @@ export default function ErrorMessage({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(COLORS) {
+  return StyleSheet.create({
   container: {
     flex: 1,
 
@@ -187,3 +187,4 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 });
+}

@@ -1,3 +1,4 @@
+import { useTheme } from "../context/ThemeContext";
 import {
   Pressable,
   StyleSheet,
@@ -9,10 +10,6 @@ import {
   Ionicons,
 } from "@expo/vector-icons";
 
-import {
-  COLORS,
-} from "../constants/colors";
-
 export default function EmptyState({
   title,
   message,
@@ -20,6 +17,8 @@ export default function EmptyState({
   actionLabel,
   onAction,
 }) {
+  const { colors: COLORS } = useTheme();
+  const styles = createStyles(COLORS);
   return (
     <View style={styles.container}>
       <View
@@ -69,8 +68,8 @@ export default function EmptyState({
   );
 }
 
-const styles =
-  StyleSheet.create({
+function createStyles(COLORS) {
+  return StyleSheet.create({
     container: {
       flex: 1,
 
@@ -165,3 +164,4 @@ const styles =
       fontWeight: "700",
     },
   });
+}

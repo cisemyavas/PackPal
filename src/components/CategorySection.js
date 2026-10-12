@@ -1,3 +1,4 @@
+import { useTheme } from "../context/ThemeContext";
 import {
   StyleSheet,
   Text,
@@ -11,10 +12,6 @@ import {
 import {
   CATEGORY_LABELS,
 } from "../constants/categories";
-
-import {
-  COLORS,
-} from "../constants/colors";
 
 function getCategoryIcon(category) {
   switch (category) {
@@ -45,6 +42,8 @@ export default function CategorySection({
   category,
   count,
 }) {
+  const { colors: COLORS } = useTheme();
+  const styles = createStyles(COLORS);
   const icon =
     getCategoryIcon(category);
 
@@ -80,7 +79,8 @@ export default function CategorySection({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(COLORS) {
+  return StyleSheet.create({
   container: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -139,3 +139,4 @@ const styles = StyleSheet.create({
       COLORS.textSecondary,
   },
 });
+}

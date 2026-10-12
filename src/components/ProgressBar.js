@@ -1,12 +1,9 @@
+import { useTheme } from "../context/ThemeContext";
 import {
   StyleSheet,
   Text,
   View,
 } from "react-native";
-
-import {
-  COLORS,
-} from "../constants/colors";
 
 export default function ProgressBar({
   packedCount,
@@ -14,6 +11,8 @@ export default function ProgressBar({
   percentage,
   showInfo = true,
 }) {
+  const { colors: COLORS } = useTheme();
+  const styles = createStyles(COLORS);
   // Beklenmeyen bir değer gelirse bar taşmasın.
   const safePercentage = Math.min(
     Math.max(percentage || 0, 0),
@@ -50,7 +49,8 @@ export default function ProgressBar({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(COLORS) {
+  return StyleSheet.create({
   container: {
     marginTop: 10,
   },
@@ -95,3 +95,4 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
 });
+}

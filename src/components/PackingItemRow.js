@@ -1,3 +1,4 @@
+import { useTheme } from "../context/ThemeContext";
 import {
   Pressable,
   StyleSheet,
@@ -9,15 +10,13 @@ import {
   Ionicons,
 } from "@expo/vector-icons";
 
-import {
-  COLORS,
-} from "../constants/colors";
-
 export default function PackingItemRow({
   item,
   onToggle,
   onDelete,
 }) {
+  const { colors: COLORS } = useTheme();
+  const styles = createStyles(COLORS);
   return (
     <View
       style={[
@@ -135,8 +134,8 @@ export default function PackingItemRow({
   );
 }
 
-const styles =
-  StyleSheet.create({
+function createStyles(COLORS) {
+  return StyleSheet.create({
     container: {
       minHeight: 72,
 
@@ -280,3 +279,4 @@ const styles =
       opacity: 0.65,
     },
   });
+}

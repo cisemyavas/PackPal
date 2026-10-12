@@ -1,3 +1,4 @@
+import { useTheme } from "../context/ThemeContext";
 import {
   Alert,
   Pressable,
@@ -19,11 +20,9 @@ import useTrips from "../hooks/useTrips";
 import { useAuth } from "../context/AuthContext";
 import { logout } from "../services/authService";
 
-import {
-  COLORS,
-} from "../constants/colors";
-
 export default function SettingsScreen() {
+  const { colors: COLORS } = useTheme();
+  const styles = createStyles(COLORS);
   const { user } = useAuth();
   const {
     trips,
@@ -417,8 +416,8 @@ export default function SettingsScreen() {
   );
 }
 
-const styles =
-  StyleSheet.create({
+function createStyles(COLORS) {
+  return StyleSheet.create({
     container: {
       flex: 1,
 
@@ -753,3 +752,4 @@ const styles =
         COLORS.textMuted,
     },
   });
+}

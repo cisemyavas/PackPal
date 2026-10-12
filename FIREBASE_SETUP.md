@@ -1,30 +1,23 @@
 # PackPal Firebase setup
 
-PackPal uses the Firebase JavaScript SDK so Firebase Authentication and Cloud Firestore work with Expo Go.
+PackPal uses Firebase JavaScript SDK 12 with Expo and React Native AsyncStorage persistence for Firebase Authentication.
 
-## 1. Create and configure a Firebase project
+## Firebase Console setup
 
-1. Create a project in the Firebase Console.
-2. Add an Android app using the Android package name from `app.json` (`expo.android.package`).
-3. In **Authentication → Sign-in method**, enable **Email/Password**.
-4. Create a **Cloud Firestore** database.
-5. In **Project settings → Your apps**, register a Web app and copy its Firebase config object.
-6. Replace the `REPLACE_WITH_...` values in `src/config/firebase.js` with that config.
+1. Create or open the Firebase project `packpal-44785`.
+2. Register a **Web app** in that project (the `</>` button). This provides the JavaScript SDK config used by the Expo mobile app; it does not turn PackPal into a web-only app.
+3. In **Build → Authentication → Get started → Sign-in method**, enable **Email/Password** and save.
+4. In **Build → Firestore Database**, create the default database. Then open **Rules**, paste the contents of `firestore.rules`, and publish.
+5. The Firebase config for this project is already set in `src/config/firebase.js`. Keep the Firebase project's service-account JSON out of the mobile project.
 
-The Firebase web config is used by the client SDK. Do not place service-account JSON credentials in the mobile app.
+The Firestore rules allow each authenticated user to read and write only `users/{theirUid}` and `users/{theirUid}/trips/{tripId}`. Do not replace them with open test rules.
 
-## 2. Publish the Firestore rules
+## Run
 
-Copy `firestore.rules` into **Firestore Database → Rules** in the Firebase Console and publish them. The rules only allow an authenticated user to read or write `/users/{theirUid}` and `/users/{theirUid}/trips/{tripId}`. Do not use open test rules.
-
-## 3. Run PackPal
-
-Install dependencies with `npx expo install firebase@^12.0.0`, then start the project with `npx expo start`.
+Install dependencies with `npm install` and start Expo with `npx expo start -c`.
 
 ## Data layout
 
-- `users/{uid}` stores the user's profile, theme, language and account metadata.
+- `users/{uid}` stores a user's profile, light/dark mode, color theme, and language preferences.
 - `users/{uid}/trips/{tripId}` stores each trip and its packing items.
-- Firebase Authentication keeps the email/password account and restores the signed-in session with AsyncStorage persistence.
-
-The app switches to the sign-in screen when there is no authenticated user. A signed-in user's trip list listens to their Firestore subcollection in real time.
+- The app listens to the signed-in user's trip subcollection and writes changes there. Signing out clears the in-memory trip list.

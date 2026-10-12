@@ -1,3 +1,4 @@
+import { useTheme } from "../context/ThemeContext";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -28,10 +29,6 @@ import {
   CATEGORY_LABELS,
 } from "../constants/categories";
 
-import {
-  COLORS,
-} from "../constants/colors";
-
 function getCategoryIcon(category) {
   switch (category) {
     case "CLOTHING":
@@ -61,6 +58,8 @@ export default function AddItemScreen({
   navigation,
   route,
 }) {
+  const { colors: COLORS } = useTheme();
+  const styles = createStyles(COLORS);
   const {
     trips,
     addItem,
@@ -568,7 +567,8 @@ export default function AddItemScreen({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(COLORS) {
+  return StyleSheet.create({
   container: {
     flex: 1,
 
@@ -889,3 +889,4 @@ const styles = StyleSheet.create({
       COLORS.textSecondary,
   },
 });
+}

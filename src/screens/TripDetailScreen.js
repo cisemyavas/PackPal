@@ -1,3 +1,4 @@
+import { useTheme } from "../context/ThemeContext";
 import {
   Alert,
   FlatList,
@@ -36,10 +37,6 @@ import {
   getPackingProgress,
 } from "../utils/progress";
 
-import {
-  COLORS,
-} from "../constants/colors";
-
 function getTripIcon(tripType) {
   switch (tripType) {
     case "BEACH":
@@ -66,6 +63,8 @@ export default function TripDetailScreen({
   navigation,
   route,
 }) {
+  const { colors: COLORS } = useTheme();
+  const styles = createStyles(COLORS);
   const {
     trips,
     toggleItem,
@@ -700,8 +699,8 @@ export default function TripDetailScreen({
   );
 }
 
-const styles =
-  StyleSheet.create({
+function createStyles(COLORS) {
+  return StyleSheet.create({
     container: {
       flex: 1,
 
@@ -1091,3 +1090,4 @@ const styles =
       fontWeight: "700",
     },
   });
+}

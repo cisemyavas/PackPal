@@ -1,3 +1,4 @@
+import { useTheme } from "../context/ThemeContext";
 import {
   Pressable,
   StyleSheet,
@@ -8,10 +9,6 @@ import {
 import {
   Ionicons,
 } from "@expo/vector-icons";
-
-import {
-  COLORS,
-} from "../constants/colors";
 
 const FILTERS = [
   {
@@ -35,6 +32,8 @@ export default function FilterTabs({
   activeFilter,
   onChange,
 }) {
+  const { colors: COLORS } = useTheme();
+  const styles = createStyles(COLORS);
   return (
     <View style={styles.container}>
       {FILTERS.map((filter) => {
@@ -84,8 +83,8 @@ export default function FilterTabs({
   );
 }
 
-const styles =
-  StyleSheet.create({
+function createStyles(COLORS) {
+  return StyleSheet.create({
     container: {
       flexDirection: "row",
 
@@ -142,3 +141,4 @@ const styles =
       color: "#FFFFFF",
     },
   });
+}

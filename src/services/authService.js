@@ -22,6 +22,7 @@ export async function registerWithEmail({ name, email, password }) {
     name: name.trim(),
     email: credential.user.email,
     theme: "light",
+    colorTheme: "forest",
     language: "en",
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),

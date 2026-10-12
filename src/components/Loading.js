@@ -1,3 +1,4 @@
+import { useTheme } from "../context/ThemeContext";
 import {
   ActivityIndicator,
   StyleSheet,
@@ -9,13 +10,11 @@ import {
   Ionicons,
 } from "@expo/vector-icons";
 
-import {
-  COLORS,
-} from "../constants/colors";
-
 export default function Loading({
   message = "Loading...",
 }) {
+  const { colors: COLORS } = useTheme();
+  const styles = createStyles(COLORS);
   return (
     <View style={styles.container}>
       <View style={styles.card}>
@@ -44,7 +43,8 @@ export default function Loading({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(COLORS) {
+  return StyleSheet.create({
   container: {
     flex: 1,
 
@@ -127,3 +127,4 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 });
+}

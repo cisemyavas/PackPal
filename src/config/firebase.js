@@ -7,6 +7,8 @@ import {
   initializeAuth,
 } from "firebase/auth";
 
+// Firebase Console > Project settings > Your apps > SDK setup and configuration.
+// Replace these values with the Firebase web app config for PackPal.
 const firebaseConfig = {
   apiKey: "AIzaSyCDOKV3sZpZvloiwPEpq0xKiHYeRzsmc94",
   authDomain: "packpal-44785.firebaseapp.com",
@@ -17,9 +19,7 @@ const firebaseConfig = {
 };
 
 export const isFirebaseConfigured =
-  !Object.values(firebaseConfig).some((value) =>
-    value.includes("REPLACE_WITH")
-  );
+  !Object.values(firebaseConfig).some((value) => value.includes("REPLACE_WITH"));
 
 let app = null;
 let auth = null;
