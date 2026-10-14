@@ -20,6 +20,16 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-font",
+      "@maplibre/maplibre-react-native",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "PackPal, yalnızca sen izin verdiğinde konumunu haritada göstermek için kullanır."
+        }
+      ]
+    ]
   }
 }

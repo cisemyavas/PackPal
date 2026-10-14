@@ -1,124 +1,52 @@
-import { useState } from "react";
-import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import React, { useMemo, useState } from "react";
+import { FlatList, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../context/ThemeContext";
-import TripCard from "../components/TripCard";
-import Loading from "../components/Loading";
-import EmptyState from "../components/EmptyState";
+import { TYPE } from "../constants/typography";
+import { PageHeader, PackingProgressCard, TripHeroCard } from "../components/RefinedUI";
 import useTrips from "../hooks/useTrips";
 
 export default function TripsScreen({ navigation }) {
-  const { colors: COLORS } = useTheme();
-  const styles = createStyles(COLORS);
+  const { colors: c, language } = useTheme();
   const { trips, loading, storageError, refreshTrips } = useTrips();
+  const [filter, setFilter] = useState("upcoming");
   const [refreshing, setRefreshing] = useState(false);
-
-  async function handleRefresh() {
-    setRefreshing(true);
-    await refreshTrips();
-    setRefreshing(false);
-  }
-
-  if (loading) return <Loading message="Loading your trips..." />;
-
+  const today = new Date().toISOString().slice(0, 10);
+  const upcomingCount = trips.filter(t => !t.endDate || t.endDate >= today).length;
+  const filtered = useMemo(() => trips.filter(t => filter === "past" ? Boolean(t.endDate && t.endDate < today) : !t.endDate || t.endDate >= today)
+    .sort((a, b) => String(a.startDate || "").localeCompare(String(b.startDate || ""))), [trips, filter, today]);
+  const tr = language !== "en";
+  const onRefresh = async () => { setRefreshing(true); try { await refreshTrips(); } finally { setRefreshing(false); } };
+  const chip = (id, name) => (
+    <Pressable onPress={() => setFilter(id)} key={id} style={{ borderRadius: 999, paddingHorizontal: 11, paddingVertical: 7, marginRight: 12, backgroundColor: filter === id ? c.primaryLight : c.surfaceAlt }}>
+      <Text style={[TYPE.micro, { color: filter === id ? c.primary : c.textSecondary }]}>{name}</Text>
+    </Pressable>
+  );
   return (
-    <SafeAreaView style={styles.container} edges={["bottom"]}>
-      {storageError && (
-        <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle-outline" size={19} color={COLORS.danger} />
-          <Text style={styles.errorText}>{storageError}</Text>
-        </View>
-      )}
-
-      <FlatList
-        data={trips}
-        numColumns={2}
-        keyExtractor={(item) => String(item.id)}
-        columnWrapperStyle={trips.length > 1 ? styles.cardRow : undefined}
-        refreshing={refreshing}
-        onRefresh={handleRefresh}
-        contentContainerStyle={[styles.list, trips.length === 0 && styles.emptyList]}
+    <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: c.background }}>
+      <FlatList data={filtered} keyExtractor={t => String(t.id)} refreshing={refreshing} onRefresh={onRefresh}
         showsVerticalScrollIndicator={false}
-        renderItem={({ item, index }) => (
-          <TripCard
-            trip={item}
-            index={index}
-            onPress={() => navigation.navigate("TripDetail", { tripId: item.id })}
-          />
-        )}
-        ListHeaderComponent={(
-          <View>
-            <View style={styles.header}>
-              <View style={styles.headerCopy}>
-                <Text style={styles.eyebrow}>PACKPAL · YOUR TRAVEL BOARD</Text>
-                <Text style={styles.title}>Where to next?</Text>
-                <Text style={styles.subtitle}>Keep every little travel detail in one place.</Text>
-              </View>
-              <View style={styles.countBubble}>
-                <Text style={styles.countNumber}>{trips.length}</Text>
-                <Text style={styles.countLabel}>{trips.length === 1 ? "trip" : "trips"}</Text>
-              </View>
-            </View>
-
-            <Pressable
-              onPress={() => navigation.navigate("NewTrip")}
-              style={({ pressed }) => [styles.createBanner, pressed && styles.createBannerPressed]}
-            >
-              <View style={styles.bannerIcon}><Ionicons name="add" size={22} color={COLORS.surface} /></View>
-              <View style={styles.bannerTextWrap}>
-                <Text style={styles.bannerTitle}>Plan a new escape</Text>
-                <Text style={styles.bannerSubtitle}>Start with a destination and dates</Text>
-              </View>
-              <Ionicons name="arrow-forward-circle" size={30} color={COLORS.surface} />
-            </Pressable>
-
-            {trips.length > 0 && (
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Your trips</Text>
-                <Text style={styles.sectionHint}>Tap a card for a quick view</Text>
-              </View>
-            )}
+        contentContainerStyle={{ padding: 20, paddingBottom: 124, gap: 16 }}
+        ListHeaderComponent={<View>
+          <PageHeader eyebrow={tr ? "SEYAHAT DEFTERİN" : "YOUR TRAVEL JOURNAL"}
+            title={tr ? "Planlarım" : "My trips"} subtitle={tr ? "Yeni bir hikâye için yola çık." : "Start your next story."}
+            icon="add" onAction={() => navigation.navigate("NewTrip")} />
+          {storageError ? <Text style={{ color: c.danger, marginBottom: 12 }}>{storageError}</Text> : null}
+          <View style={{ flexDirection: "row", marginBottom: 0 }}>
+            {chip("upcoming", tr ? `Yaklaşan · ${upcomingCount}` : `Upcoming · ${upcomingCount}`)}
+            {chip("past", tr ? "Geçmiş" : "Past")}
           </View>
-        )}
-        ListEmptyComponent={(
-          <EmptyState
-            icon="airplane-outline"
-            title="Your journey starts here"
-            message="Create your first trip and PackPal will prepare a packing list for you."
-            actionLabel="Create Trip"
-            onAction={() => navigation.navigate("NewTrip")}
-          />
-        )}
-      />
+        </View>}
+        renderItem={({ item, index }) => <View style={{ gap: 16 }}>
+          <TripHeroCard trip={item} compact={index > 0} onPress={() => navigation.navigate("TripDetail", { tripId: item.id })} />
+          {index === 0 ? <PackingProgressCard trip={item} short onPress={() => navigation.navigate("TripDetail", { tripId: item.id })} /> : null}
+        </View>}
+        ListEmptyComponent={!loading ? <View style={{ backgroundColor: c.surface, borderRadius: 24, padding: 22, alignItems: "center", marginTop: 16 }}>
+          <Text style={[TYPE.subtitle, { color: c.text, textAlign: "center" }]}>{filter === "past" ? "Henüz geçmiş seyahatin yok" : "Henüz seyahatin yok"}</Text>
+          <Pressable onPress={() => navigation.navigate("NewTrip")} style={{ marginTop: 15, padding: 10 }}>
+            <Text style={[TYPE.label, { color: c.primary }]}>＋ Yeni seyahat oluştur</Text>
+          </Pressable>
+        </View> : <Text style={[TYPE.caption, { color: c.textSecondary }]}>Yükleniyor...</Text>} />
     </SafeAreaView>
   );
-}
-
-function createStyles(COLORS) {
-  return StyleSheet.create({
-    container: { flex: 1, backgroundColor: COLORS.background },
-    list: { paddingHorizontal: 18, paddingTop: 13, paddingBottom: 28 },
-    emptyList: { flexGrow: 1 },
-    cardRow: { gap: 12, alignItems: "flex-start" },
-    header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 18 },
-    headerCopy: { flex: 1, paddingRight: 12 },
-    eyebrow: { color: COLORS.primary, fontSize: 10, fontWeight: "900", letterSpacing: 1.1, marginBottom: 8 },
-    title: { color: COLORS.text, fontSize: 29, lineHeight: 34, fontWeight: "900", letterSpacing: -1.1 },
-    subtitle: { color: COLORS.textSecondary, fontSize: 13, lineHeight: 19, marginTop: 5 },
-    countBubble: { width: 58, height: 58, borderRadius: 21, backgroundColor: COLORS.primaryLight, alignItems: "center", justifyContent: "center" },
-    countNumber: { color: COLORS.primary, fontSize: 19, fontWeight: "900" },
-    countLabel: { color: COLORS.primary, fontSize: 9, fontWeight: "700", marginTop: -1 },
-    createBanner: { minHeight: 72, backgroundColor: COLORS.primary, borderRadius: 22, paddingHorizontal: 13, paddingVertical: 11, flexDirection: "row", alignItems: "center", marginBottom: 22 },
-    createBannerPressed: { opacity: 0.86, transform: [{ scale: 0.99 }] },
-    bannerIcon: { width: 42, height: 42, borderRadius: 15, backgroundColor: "rgba(255,255,255,0.18)", alignItems: "center", justifyContent: "center" },
-    bannerTextWrap: { flex: 1, marginLeft: 11 },
-    bannerTitle: { color: COLORS.surface, fontSize: 14, fontWeight: "800" },
-    bannerSubtitle: { color: COLORS.surface, opacity: 0.78, fontSize: 10, marginTop: 4 },
-    sectionHeader: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 },
-    sectionTitle: { color: COLORS.text, fontSize: 19, fontWeight: "900", letterSpacing: -0.4 },
-    sectionHint: { color: COLORS.textMuted, fontSize: 10, fontWeight: "600" },
-    errorContainer: { marginHorizontal: 18, marginTop: 8, padding: 12, borderRadius: 13, backgroundColor: COLORS.dangerLight, flexDirection: "row", alignItems: "center", gap: 8 },
-    errorText: { flex: 1, color: COLORS.danger, fontSize: 12, lineHeight: 17 },
-  });
 }

@@ -7,7 +7,7 @@ import { useAuth } from "../context/AuthContext";
 import { getUserProfile, updateUserProfile } from "../services/firestoreService";
 import { updateAccountName } from "../services/authService";
 import { PALETTES } from "../constants/colors";
-export default function ProfileScreen() {
+export default function ProfileScreen({ navigation }) {
   const { colors: COLORS, mode, palette, applyPreferences } = useTheme();
   const styles = createStyles(COLORS);
   const { user, setUser } = useAuth();
@@ -45,7 +45,7 @@ export default function ProfileScreen() {
         setUser({ ...user, displayName: name.trim() });
       }
       await updateUserProfile(user.uid, { name: name.trim(), theme, colorTheme, language });
-      applyPreferences({ theme, colorTheme });
+      applyPreferences({ theme, colorTheme, language });
       Alert.alert("Saved", "Your profile and preferences were saved.");
     } catch (error) {
       Alert.alert("Could not save", error.message);
@@ -72,6 +72,52 @@ export default function ProfileScreen() {
           <Text style={[styles.fieldLabel, styles.emailLabel]}>Email</Text>
           <View style={styles.readonly}><Ionicons name="mail-outline" size={18} color={COLORS.textSecondary} /><Text style={styles.email}>{user.email}</Text></View>
         </View>
+        
+<Pressable
+  onPress={() => navigation.navigate("Appearance")}
+  style={{
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 24,
+    padding: 16,
+    marginBottom: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  }}
+>
+  <View
+    style={{
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    }}
+  >
+    <Ionicons
+      name="color-palette-outline"
+      size={22}
+      color={COLORS.primary}
+    />
+
+    <Text
+      style={{
+        fontSize: 14,
+        fontWeight: "600",
+        color: COLORS.text,
+      }}
+    >
+      Görünüm
+    </Text>
+  </View>
+
+  <Ionicons
+    name="chevron-forward"
+    size={18}
+    color={COLORS.textSecondary}
+  />
+</Pressable>
+
 
         <Text style={styles.label}>PREFERENCES</Text>
         <View style={styles.card}>

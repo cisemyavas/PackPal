@@ -23,30 +23,7 @@ export default function TripsStack() {
         contentStyle: { backgroundColor: colors.background },
       }}
     >
-      <Stack.Screen
-        name="Trips"
-        component={TripsScreen}
-        options={({ navigation }) => ({
-          title: "My Trips",
-          headerRight: () => (
-            <Pressable
-              onPress={() => navigation.navigate("NewTrip")}
-              style={{
-                width: 44,
-                height: 44,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Ionicons
-                name="add"
-                size={28}
-                color={colors.text}
-              />
-            </Pressable>
-          ),
-        })}
-      />
+      <Stack.Screen name="Trips" component={TripsScreen} options={{ headerShown: false }} />
 
       <Stack.Screen
         name="NewTrip"

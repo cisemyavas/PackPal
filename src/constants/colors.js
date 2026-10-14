@@ -1,44 +1,192 @@
+
 export const PALETTES = [
-  { id: "forest", label: "Forest", swatch: "#2F6B4F" },
-  { id: "coral", label: "Coral", swatch: "#F06B63" },
-  { id: "ocean", label: "Ocean", swatch: "#2186B5" },
-  { id: "lime", label: "Lime", swatch: "#B3C92E" },
+  { id: "purple", label: "Mor", swatch: "#AA8AFF" },
+  { id: "blue", label: "Mavi", swatch: "#82B2FF" },
+  { id: "pink", label: "Pembe", swatch: "#F59CCD" },
+  { id: "orange", label: "Turuncu", swatch: "#FFB185" },
+  { id: "yellow", label: "Sarı", swatch: "#F0D16B" },
+  { id: "green", label: "Yeşil", swatch: "#72D7AA" },
+  { id: "cyan", label: "Turkuaz", swatch: "#70D3E2" },
 ];
 
+// Figma PackPal / Refined vurgu renkleri
 const ACCENTS = {
-  forest: { primary: "#2F6B4F", primaryDark: "#214C38", light: "#E4EFE8", dark: "#8BC5A4" },
-  coral: { primary: "#E85F62", primaryDark: "#BF414B", light: "#FCE9E6", dark: "#FF9B92" },
-  ocean: { primary: "#2186B5", primaryDark: "#176389", light: "#E3F2F8", dark: "#7FC7E5" },
-  lime: { primary: "#8DA51E", primaryDark: "#647515", light: "#F0F4D9", dark: "#C3D855" },
+  purple: {
+    primary: "#7145DE",
+    dark: "#AA8AFF",
+    primaryDark: "#5832B2",
+    light: "#EEE7FF",
+    darkLight: "#302548",
+    button: "#7950F2",
+  },
+
+  blue: {
+    primary: "#225FCB",
+    dark: "#82B2FF",
+    primaryDark: "#194A9F",
+    light: "#E7EFFF",
+    darkLight: "#1D3154",
+    button: "#225FCB",
+  },
+
+  pink: {
+    primary: "#B82672",
+    dark: "#F59CCD",
+    primaryDark: "#911A58",
+    light: "#FCE8F3",
+    darkLight: "#49253D",
+    button: "#B82672",
+  },
+
+  orange: {
+    primary: "#A54712",
+    dark: "#FFB185",
+    primaryDark: "#80350D",
+    light: "#FFF0E6",
+    darkLight: "#492D25",
+    button: "#A54712",
+  },
+
+  yellow: {
+    primary: "#87610B",
+    dark: "#F0D16B",
+    primaryDark: "#654907",
+    light: "#FFF6D8",
+    darkLight: "#43391F",
+    button: "#87610B",
+  },
+
+  green: {
+    primary: "#14764F",
+    dark: "#72D7AA",
+    primaryDark: "#0E573A",
+    light: "#E3F5EC",
+    darkLight: "#203D35",
+    button: "#14764F",
+  },
+
+  cyan: {
+    primary: "#086D80",
+    dark: "#70D3E2",
+    primaryDark: "#064D5C",
+    light: "#DDF5F8",
+    darkLight: "#203D48",
+    button: "#086D80",
+  },
 };
 
-export function getColors(mode = "light", palette = "forest") {
-  const accent = ACCENTS[palette] || ACCENTS.forest;
+// Eski kayıtlı renk tercihleri için uyumluluk
+const LEGACY_PALETTES = {
+  forest: "green",
+  coral: "pink",
+  ocean: "blue",
+  lime: "yellow",
+};
+
+// Figma açık tema renkleri
+const LIGHT_THEME = {
+  background: "#F8F7F4",
+  surface: "#FFFFFF",
+  surfaceAlt: "#EEEDF4",
+  text: "#202130",
+  textSecondary: "#646777",
+  textMuted: "#858695",
+  border: "#E6E4ED",
+  white: "#FFFFFF",
+
+  success: "#197953",
+  successLight: "#E5F5ED",
+  warning: "#8D6012",
+  warningLight: "#FBF0DC",
+
+  danger: "#D74B4B",
+  dangerLight: "#FBE5E2",
+  info: "#3185A8",
+  infoLight: "#E3F2F7",
+};
+
+// Figma koyu tema renkleri
+const DARK_THEME = {
+  background: "#0B1020",
+  surface: "#171E32",
+  surfaceAlt: "#202841",
+  text: "#F7F8FF",
+  textSecondary: "#B2BBD1",
+  textMuted: "#8894B0",
+  border: "#2C354D",
+  white: "#FFFFFF",
+
+  success: "#78D9AE",
+  successLight: "#203E35",
+  warning: "#F0C373",
+  warningLight: "#3C3223",
+
+  danger: "#FF8A82",
+  dangerLight: "#402A29",
+  info: "#7EC8E8",
+  infoLight: "#21353D",
+};
+
+export function getColors(mode = "light", palette = "purple") {
   const dark = mode === "dark";
 
+  // Eski renk isimlerini yeni sistemle eşleştir.
+  const paletteId = LEGACY_PALETTES[palette] || palette;
+
+  const accent = ACCENTS[paletteId] || ACCENTS.purple;
+
+  const theme = dark ? DARK_THEME : LIGHT_THEME;
+
+  const primary = dark ? accent.dark : accent.primary;
+
   return {
-    primary: dark ? accent.dark : accent.primary,
+    ...theme,
+
+    // Aktif vurgu rengi
+    primary,
+
     primaryDark: accent.primaryDark,
-    primaryLight: dark ? "#29352E" : accent.light,
-    background: dark ? "#101613" : "#F5F3EB",
-    surface: dark ? "#1B241F" : "#FFFEF9",
-    surfaceAlt: dark ? "#232E28" : "#ECEADF",
-    text: dark ? "#F4F5EF" : "#1D2821",
-    textSecondary: dark ? "#B4C0B8" : "#68756C",
-    textMuted: dark ? "#84928A" : "#98A198",
-    border: dark ? "#344139" : "#E2E1D7",
-    success: dark ? "#72C99B" : "#2F8A59",
-    successLight: dark ? "#263B30" : "#E1F2E7",
-    warning: dark ? "#F0B969" : "#C47A2A",
-    warningLight: dark ? "#3C3223" : "#FBF0DC",
-    danger: dark ? "#FF8A82" : "#D74B4B",
-    dangerLight: dark ? "#402A29" : "#FBE5E2",
-    info: dark ? "#7EC8E8" : "#3185A8",
-    infoLight: dark ? "#21353D" : "#E3F2F7",
-    packed: dark ? "#72C99B" : "#2F8A59",
-    missing: dark ? "#F0B969" : "#C47A2A",
+
+    primaryLight: dark
+      ? accent.darkLight
+      : accent.light,
+
+    // Buton renkleri
+    button: accent.button,
+    buttonText: "#FFFFFF",
+
+    // Seçili öğeler
+    accent: primary,
+    active: primary,
+    selected: primary,
+
+    // Valiz durumları
+    packed: theme.success,
+    missing: theme.warning,
+
+    // Navigasyon ve kartlar
+    card: theme.surface,
+    tabBar: theme.surface,
+    tabBarActive: primary,
+    tabBarInactive: theme.textSecondary,
+
+    // Input alanları
+    inputBackground: theme.surface,
+    placeholder: theme.textSecondary,
+
+    // İlerleme çubuğu
+    progressTrack: theme.surfaceAlt,
+    progressFill: primary,
+
+    // Görsel yardımcı değerler
+    transparent: "transparent",
+    overlay: dark
+      ? "rgba(0, 0, 0, 0.55)"
+      : "rgba(0, 0, 0, 0.25)",
   };
 }
 
-// Default palette for code that needs a non-hook fallback.
-export const COLORS = getColors("light", "forest");
+// Varsayılan tema: Figma Light + Mor
+export const COLORS = getColors("light", "purple");
+
+export default COLORS;
