@@ -31,7 +31,7 @@ function ProfileStack() {
 const TABS = [
   ["Home", "Ana sayfa", "Home", "home", "home-outline"],
   ["Plan", "Plan", "Plan", "airplane", "airplane-outline"],
-  ["Discover", "Keşfet", "Discover", "compass", "compass-outline"],
+  ["Discover", "KeÅŸfet", "Discover", "compass", "compass-outline"],
   ["Packing", "Valiz", "Packing", "bag-handle", "bag-handle-outline"],
   ["Profile", "Profil", "Profile", "person", "person-outline"],
 ];
@@ -61,7 +61,14 @@ export default function RootNavigator() {
     }}>
       {TABS.map(([key, tr, en, active, idle]) => (
         <Tab.Screen key={key} name={key} component={COMPONENTS[key]}
-          options={{ title: language === "en" ? en : tr, tabBarIcon: ({ focused, color }) => <Ionicons name={focused ? active : idle} size={21} color={color} /> }} />
+          listeners={({ navigation }) => ({
+            tabPress: (event) => {
+              if (key !== "Plan") return;
+              event.preventDefault();
+              navigation.navigate("Plan", { screen: "Trips" });
+            },
+          })}
+          options={{ title: language === "en" ? en : tr, popToTopOnBlur: key === "Plan", tabBarIcon: ({ focused, color }) => <Ionicons name={focused ? active : idle} size={21} color={color} /> }} />
       ))}
     </Tab.Navigator>
   );

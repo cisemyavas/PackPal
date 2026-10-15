@@ -32,6 +32,14 @@ export default function TripsScreen({ navigation }) {
             title={tr ? "Planlarım" : "My trips"} subtitle={tr ? "Yeni bir hikâye için yola çık." : "Start your next story."}
             icon="add" onAction={() => navigation.navigate("NewTrip")} />
           {storageError ? <Text style={{ color: c.danger, marginBottom: 12 }}>{storageError}</Text> : null}
+          <Pressable onPress={() => navigation.navigate("SharedTrips")}
+            style={{ marginBottom: 14, borderRadius: 18, padding: 16, backgroundColor: c.primaryLight, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <View style={{ flex: 1 }}>
+              <Text style={[TYPE.label, { color: c.primary }]}>{tr ? "👥 Ortak Valiz" : "👥 Shared Packing"}</Text>
+              <Text style={[TYPE.caption, { color: c.textSecondary, marginTop: 4 }]}>{tr ? "Arkadaşlarınla ortak liste hazırla veya kodla katıl" : "Create a shared list or join with a code"}</Text>
+            </View>
+            <Text style={{ color: c.primary, fontWeight: "800" }}>→</Text>
+          </Pressable>
           <View style={{ flexDirection: "row", marginBottom: 0 }}>
             {chip("upcoming", tr ? `Yaklaşan · ${upcomingCount}` : `Upcoming · ${upcomingCount}`)}
             {chip("past", tr ? "Geçmiş" : "Past")}

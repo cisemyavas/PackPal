@@ -1,0 +1,217 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function tripPath(tid) {
+      return /databases/$(database)/documents/sharedTrips/$(tid);
+    }
+    function memberPath(tid, uid) {
+      return /databases/$(database)/documents/sharedTrips/$(tid)/members/$(uid);
+    }
+    function linkPath(tid, uid) {
+      return /databases/$(database)/documents/users/$(uid)/sharedTripLinks/$(tid);
+    }
+    function proofPath(tid, uid) {
+      return /databases/$(database)/documents/sharedTrips/$(tid)/membershipProofs/$(uid);
+    }
+    function invitePath(code) {
+      return /databases/$(database)/documents/sharedTripInvites/$(code);
+    }
+    function isMember(tid) {
+      return signedIn() && exists(memberPath(tid, request.auth.uid));
+    }
+    function isOwner(tid) {
+      return signedIn() && exists(tripPath(tid))
+        && get(tripPath(tid)).data.ownerUid == request.auth.uid;
+    }
+    function validInvite(code, tid) {
+      return code is string && code.matches('^[A-Za-z0-9]{20}$')
+        && exists(invitePath(code))
+        && exists(tripPath(tid))
+        && get(invitePath(code)).data.tripId == tid
+        && get(invitePath(code)).data.isActive == true
+        // Legacy v1 documents have no inviteVersion: they count as version 0.
+        && get(invitePath(code)).data.get('inviteVersion', 0)
+          == get(tripPath(tid)).data.get('inviteVersion', 0);
+    }
+    function invitesRotated(tid) {
+      return getAfter(tripPath(tid)).data.get('inviteVersion', 0)
+        == get(tripPath(tid)).data.get('inviteVersion', 0) + 1;
+    }
+    function validMemberData(uid) {
+      return request.resource.data.keys().hasAll(['uid', 'displayName', 'joinedAt'])
+        && request.resource.data.keys().hasOnly(['uid', 'displayName', 'joinedAt'])
+        && request.resource.data.uid == uid
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() > 0
+        && request.resource.data.displayName.size() <= 80
+        && request.resource.data.joinedAt == request.time;
+    }
+    function validAssigned(tid, assigned) {
+      return assigned == null || (assigned is string && exists(memberPath(tid, assigned)));
+    }
+    function validItem() {
+      return request.resource.data.keys().hasAll([
+        'name','quantity','isPacked','assignedTo','createdBy','createdAt','updatedAt'
+      ]) && request.resource.data.keys().hasOnly([
+        'name','quantity','isPacked','assignedTo','createdBy','createdAt','updatedAt'
+      ]) && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 100
+        && request.resource.data.quantity is int
+        && request.resource.data.quantity >= 1
+        && request.resource.data.quantity <= 99
+        && request.resource.data.isPacked is bool;
+    }
+
+    // Preserve existing personal-trip behavior exactly.
+    match /users/{userId} {
+      allow read, write: if signedIn() && request.auth.uid == userId;
+      match /trips/{tripId} {
+        allow read, write: if signedIn() && request.auth.uid == userId;
+      }
+      // Per-user link index; lets the app show the user's shared trips without
+      // querying other users' data or relaxing shared trip visibility.
+      match /sharedTripLinks/{tripId} {
+        allow get, list: if signedIn() && request.auth.uid == userId;
+        allow create: if signedIn() && request.auth.uid == userId
+          && request.resource.data.keys().hasAll(['tripId','createdAt'])
+          && request.resource.data.keys().hasOnly(['tripId','createdAt'])
+          && request.resource.data.tripId == tripId
+          && request.resource.data.createdAt == request.time
+          && existsAfter(memberPath(tripId, userId));
+        allow update: if false;
+        allow delete: if (signedIn() && request.auth.uid == userId
+            && !existsAfter(memberPath(tripId, userId)))
+          || (isOwner(tripId) && userId != request.auth.uid
+            && !existsAfter(memberPath(tripId, userId))
+            && invitesRotated(tripId));
+      }
+    }
+
+    match /sharedTrips/{tripId} {
+      allow get: if isMember(tripId);
+      allow list: if false; // No global discovery of private trips.
+      allow create: if signedIn()
+        && request.resource.data.keys().hasAll([
+          'ownerUid','title','destination','startDate','endDate','createdAt','updatedAt'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'ownerUid','title','destination','startDate','endDate','createdAt','updatedAt'
+        ])
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 100
+        && request.resource.data.destination is string
+        && request.resource.data.destination.size() > 0
+        && request.resource.data.destination.size() <= 100
+        && request.resource.data.startDate is string
+        && request.resource.data.endDate is string
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if isOwner(tripId)
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['title','destination','startDate','endDate','inviteVersion','updatedAt'])
+        && (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['inviteVersion'])
+          || (
+            request.resource.data.inviteVersion is int
+            && request.resource.data.inviteVersion == resource.data.get('inviteVersion', 0) + 1
+          )
+        )
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 100
+        && request.resource.data.destination is string
+        && request.resource.data.destination.size() > 0
+        && request.resource.data.destination.size() <= 100;
+      allow delete: if false;
+
+      match /membershipProofs/{uid} {
+        // Secret invite codes are never readable by other participants.
+        allow get: if signedIn() && request.auth.uid == uid;
+        allow list: if false;
+        allow create: if signedIn() && request.auth.uid == uid
+          && request.resource.data.keys().hasAll(['tripId','code','createdAt'])
+          && request.resource.data.keys().hasOnly(['tripId','code','createdAt'])
+          && request.resource.data.tripId == tripId
+          && request.resource.data.createdAt == request.time
+          && validInvite(request.resource.data.code, tripId);
+        allow update: if false;
+        allow delete: if signedIn() && (request.auth.uid == uid || isOwner(tripId));
+      }
+
+      match /members/{uid} {
+        // A user may inspect only their own pre-join membership; all members
+        // may list participants after joining.
+        allow get: if signedIn() && (request.auth.uid == uid || isMember(tripId));
+        allow list: if isMember(tripId);
+        allow create: if signedIn() && request.auth.uid == uid
+          && validMemberData(uid)
+          && (
+            // Owner joins atomically when creating the trip.
+            (getAfter(tripPath(tripId)).data.ownerUid == uid)
+            || (
+              existsAfter(proofPath(tripId, uid))
+              && getAfter(proofPath(tripId, uid)).data.tripId == tripId
+              && validInvite(getAfter(proofPath(tripId, uid)).data.code, tripId)
+            )
+          );
+        allow update: if false;
+        // Owner may revoke another participant only together with a code
+        // rotation. Participants may remove their own membership (not owner).
+        allow delete: if signedIn()
+          && uid != get(tripPath(tripId)).data.ownerUid
+          && !existsAfter(linkPath(tripId, uid))
+          && !existsAfter(proofPath(tripId, uid))
+          && (request.auth.uid == uid
+            || (isOwner(tripId) && invitesRotated(tripId)));
+      }
+
+      match /items/{itemId} {
+        allow get, list: if isMember(tripId);
+        allow create: if isMember(tripId)
+          && validItem()
+          && validAssigned(tripId, request.resource.data.assignedTo)
+          && request.resource.data.createdBy == request.auth.uid
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time;
+        allow update: if isMember(tripId)
+          && validItem()
+          // An item assigned to a departed participant stays editable: the
+          // assignment can be left as-is or replaced with an active member.
+          && (request.resource.data.assignedTo == resource.data.assignedTo
+              || validAssigned(tripId, request.resource.data.assignedTo))
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['name','quantity','isPacked','assignedTo','updatedAt'])
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if isMember(tripId);
+      }
+    }
+
+    match /sharedTripInvites/{code} {
+      // Knowledge of a long, random invite code is required to fetch it.
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn()
+        && code.matches('^[A-Za-z0-9]{20}$')
+        && request.resource.data.keys().hasAll(['tripId','createdBy','isActive','createdAt'])
+        && request.resource.data.keys().hasOnly(['tripId','createdBy','isActive','createdAt','inviteVersion'])
+        && request.resource.data.get('inviteVersion', 0) is int
+        && request.resource.data.get('inviteVersion', 0) >= 0
+        && request.resource.data.createdBy == request.auth.uid
+        && getAfter(tripPath(request.resource.data.tripId)).data.ownerUid == request.auth.uid
+        && request.resource.data.get('inviteVersion', 0)
+          == getAfter(tripPath(request.resource.data.tripId)).data.get('inviteVersion', 0)
+        && request.resource.data.isActive == true
+        && request.resource.data.createdAt == request.time;
+      allow update: if signedIn()
+        && isOwner(resource.data.tripId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isActive'])
+        && request.resource.data.isActive == false;
+      allow delete: if false;
+    }
+  }
+}
