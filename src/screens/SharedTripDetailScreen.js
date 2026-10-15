@@ -122,6 +122,21 @@ export default function SharedTripDetailScreen({ route, navigation }) {
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 20, paddingBottom: 130 }}>
         <Text style={{ fontWeight: '800', fontSize: 27, color: c.text, marginBottom: 4 }}>{trip?.title || (tr ? 'Ortak Seyahat' : 'Shared Trip')}</Text>
         <Text style={{ color: c.textSecondary, marginBottom: 20 }}>{trip?.destination || '...'}{trip?.startDate ? ` · ${trip.startDate}` : ''}</Text>
+        <Pressable accessibilityRole="button" onPress={() => navigation.navigate('Itinerary', {
+          scope: 'shared', tripId, title: trip?.title, destination: trip?.destination,
+          startDate: trip?.startDate, endDate: trip?.endDate,
+        })} style={{ backgroundColor: c.primaryLight, borderRadius: 18, padding: 16, marginBottom: 16,
+          flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <Ionicons name="calendar-outline" size={25} color={c.primary} />
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: c.primary, fontWeight: '800', fontSize: 16 }}>{tr ? 'Gezi Planı' : 'Itinerary'}</Text>
+            <Text style={{ color: c.textSecondary, fontSize: 12, marginTop: 3 }}>
+              {tr ? 'Gün gün etkinlikleri birlikte planlayın' : 'Plan daily activities together'}
+            </Text>
+          </View>
+          <Ionicons name="arrow-forward" size={20} color={c.primary} />
+        </Pressable>
+
         {error ? <Text style={{ color: c.danger, marginBottom: 14 }}>{error}</Text> : null}
 
         <View style={card}>

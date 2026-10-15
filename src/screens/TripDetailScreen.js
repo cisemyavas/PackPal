@@ -291,6 +291,20 @@ export default function TripDetailScreen({
 
         ListHeaderComponent={
           <View>
+            <Pressable accessibilityRole="button" onPress={() => navigation.navigate('Itinerary', {
+              scope: 'personal', tripId: trip.id, title: trip.destination,
+              destination: trip.destination, startDate: trip.startDate, endDate: trip.endDate,
+            })} style={{ backgroundColor: COLORS.primaryLight, borderRadius: 18, padding: 16,
+              marginBottom: 16, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <Ionicons name="calendar-outline" size={25} color={COLORS.primary} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: COLORS.primary, fontWeight: '800', fontSize: 16 }}>Gezi Planı</Text>
+                <Text style={{ color: COLORS.textSecondary, fontSize: 12, marginTop: 3 }}>
+                  Gün gün gezilecek yerleri ve etkinlikleri düzenle
+                </Text>
+              </View>
+              <Ionicons name="arrow-forward" size={20} color={COLORS.primary} />
+            </Pressable>
             {/* TRIP HERO CARD */}
 
             <View

@@ -9,6 +9,7 @@ import AddItemScreen from "../screens/AddItemScreen";
 import WeatherScreen from "../screens/WeatherScreen";
 import SharedTripsScreen from "../screens/SharedTripsScreen";
 import SharedTripDetailScreen from "../screens/SharedTripDetailScreen";
+import ItineraryScreen from "../screens/ItineraryScreen";
 import { useTheme } from "../context/ThemeContext";
 
 const Stack = createNativeStackNavigator();
@@ -29,6 +30,7 @@ export default function TripsStack() {
 
       <Stack.Screen name="SharedTrips" component={SharedTripsScreen} options={{ title: "Ortak Valiz", animation: "slide_from_right" }} />
       <Stack.Screen name="SharedTripDetail" component={SharedTripDetailScreen} options={{ title: "Ortak Valiz", animation: "slide_from_right" }} />
+      <Stack.Screen name="Itinerary" component={ItineraryScreen} options={{ title: "Gezi Planı", animation: "slide_from_right" }} />
 
       <Stack.Screen
         name="NewTrip"
