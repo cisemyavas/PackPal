@@ -294,12 +294,12 @@ export default function TripDetailScreen({
             <Pressable accessibilityRole="button" onPress={() => navigation.navigate('Itinerary', {
               scope: 'personal', tripId: trip.id, title: trip.destination,
               destination: trip.destination, startDate: trip.startDate, endDate: trip.endDate,
-            })} style={{ backgroundColor: COLORS.primaryLight, borderRadius: 18, padding: 16,
-              marginBottom: 16, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            })} style={{ backgroundColor: COLORS.primaryLight, borderRadius: 16, padding: 11,
+              marginBottom: 10, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <Ionicons name="calendar-outline" size={25} color={COLORS.primary} />
               <View style={{ flex: 1 }}>
-                <Text style={{ color: COLORS.primary, fontWeight: '800', fontSize: 16 }}>Gezi Planı</Text>
-                <Text style={{ color: COLORS.textSecondary, fontSize: 12, marginTop: 3 }}>
+                <Text style={{ color: COLORS.primary, fontWeight: '800', fontSize: 14 }}>Gezi Planı</Text>
+                <Text style={{ color: COLORS.textSecondary, fontSize: 11, marginTop: 2 }}>
                   Gün gün gezilecek yerleri ve etkinlikleri düzenle
                 </Text>
               </View>
@@ -324,7 +324,7 @@ export default function TripDetailScreen({
                 >
                   <Ionicons
                     name={tripIcon}
-                    size={28}
+                    size={22}
                     color={
                       COLORS.primary
                     }
@@ -740,9 +740,9 @@ function createStyles(COLORS) {
       backgroundColor:
         COLORS.surface,
 
-      padding: 20,
+      padding: 14,
 
-      borderRadius: 22,
+      borderRadius: 20,
 
       borderWidth: 1,
       borderColor:
@@ -767,10 +767,10 @@ function createStyles(COLORS) {
     },
 
     tripIconBox: {
-      width: 56,
-      height: 56,
+      width: 42,
+      height: 42,
 
-      borderRadius: 18,
+      borderRadius: 14,
 
       backgroundColor:
         COLORS.primaryLight,
@@ -779,7 +779,7 @@ function createStyles(COLORS) {
       justifyContent:
         "center",
 
-      marginRight: 14,
+      marginRight: 10,
     },
 
     tripTitleArea: {
@@ -788,7 +788,7 @@ function createStyles(COLORS) {
     },
 
     destination: {
-      fontSize: 25,
+      fontSize: 21,
 
       fontWeight: "800",
 
@@ -799,10 +799,10 @@ function createStyles(COLORS) {
     },
 
     typeBadge: {
-      marginTop: 7,
+      marginTop: 4,
 
       paddingHorizontal: 10,
-      paddingVertical: 5,
+      paddingVertical: 3,
 
       borderRadius: 20,
 
@@ -829,9 +829,9 @@ function createStyles(COLORS) {
       flexDirection: "row",
       alignItems: "center",
 
-      marginTop: 20,
+      marginTop: 12,
 
-      paddingTop: 16,
+      paddingTop: 10,
 
       borderTopWidth: 1,
       borderTopColor:
@@ -839,12 +839,12 @@ function createStyles(COLORS) {
     },
 
     infoIcon: {
-      width: 38,
-      height: 38,
+      width: 30,
+      height: 30,
 
       borderRadius: 12,
 
-      marginRight: 12,
+      marginRight: 9,
 
       backgroundColor:
         COLORS.primaryLight,
@@ -864,7 +864,7 @@ function createStyles(COLORS) {
     infoValue: {
       marginTop: 3,
 
-      fontSize: 14,
+      fontSize: 12,
       fontWeight: "600",
 
       color:
@@ -876,11 +876,11 @@ function createStyles(COLORS) {
     // ==========================================
 
     progressBox: {
-      marginTop: 18,
+      marginTop: 10,
 
-      padding: 16,
+      padding: 10,
 
-      borderRadius: 16,
+      borderRadius: 12,
 
       backgroundColor:
         COLORS.primaryLight,
@@ -914,7 +914,7 @@ function createStyles(COLORS) {
     },
 
     bigPercentage: {
-      fontSize: 22,
+      fontSize: 18,
 
       fontWeight: "800",
 
@@ -929,15 +929,15 @@ function createStyles(COLORS) {
     actionRow: {
       flexDirection: "row",
 
-      gap: 10,
+      gap: 8,
 
-      marginTop: 18,
+      marginTop: 10,
     },
 
     primaryAction: {
       flex: 1,
 
-      minHeight: 50,
+      minHeight: 40,
 
       borderRadius: 14,
 
@@ -957,7 +957,7 @@ function createStyles(COLORS) {
     primaryActionText: {
       color: "#FFFFFF",
 
-      fontSize: 15,
+      fontSize: 13,
 
       fontWeight: "700",
     },
@@ -965,7 +965,7 @@ function createStyles(COLORS) {
     secondaryAction: {
       flex: 1,
 
-      minHeight: 50,
+      minHeight: 40,
 
       borderRadius: 14,
 
@@ -991,7 +991,7 @@ function createStyles(COLORS) {
       color:
         COLORS.primary,
 
-      fontSize: 15,
+      fontSize: 13,
 
       fontWeight: "700",
     },
@@ -1011,7 +1011,7 @@ function createStyles(COLORS) {
     // ==========================================
 
     sectionHeader: {
-      marginTop: 28,
+      marginTop: 18,
       marginBottom: 12,
 
       flexDirection: "row",
@@ -1099,7 +1099,7 @@ function createStyles(COLORS) {
       color:
         COLORS.danger,
 
-      fontSize: 15,
+      fontSize: 13,
 
       fontWeight: "700",
     },

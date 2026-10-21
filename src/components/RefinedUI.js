@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../context/ThemeContext";
 import { TYPE } from "../constants/typography";
 import { getPackingProgress } from "../utils/progress";
+import { getPlaceImage } from "../services/placeImageService";
 
 const SCENERY = {
   cappadocia: require("../../assets/figma_refined/cappadocia.jpeg"),
@@ -85,23 +86,130 @@ function coverForTrip(trip) {
 
 // The bundled scenery files are replaced with the ORIGINAL Figma images by the installer.
 // User destinations without a matching supplied cover keep the simple theme treatment.
+
 export function TripCover({ trip, height = 158 }) {
   const { colors: c } = useTheme();
-  const userPhoto = trip?.imageUri || trip?.photoUri || trip?.coverUri || trip?.image;
-  const cover = (typeof userPhoto === "string" && /^(https?:|file:|content:)/i.test(userPhoto))
-    ? { uri: userPhoto } : coverForTrip(trip);
-  if (cover) return <Image source={cover} style={{ height, width: "100%" }} resizeMode="cover" />;
+
+  const [remoteImage, setRemoteImage] = useState(null);
+
+  const destination = trip?.destination || "";
+
+  const userPhoto =
+    trip?.imageUri ||
+    trip?.photoUri ||
+    trip?.coverUri ||
+    trip?.image;
+
+  const hasUserPhoto =
+    typeof userPhoto === "string" &&
+    /^(https?:|file:|content:)/i.test(userPhoto);
+
+  const localCover = coverForTrip(trip);
+
+  useEffect(() => {
+    let active = true;
+    setRemoteImage(null);
+
+    // Kendi fotoğrafı veya hazır görseli varsa
+    // internetten yeniden fotoğraf arama.
+    if (hasUserPhoto || localCover || !destination) {
+      return () => {
+        active = false;
+      };
+    }
+
+    getPlaceImage(destination).then((url) => {
+      if (active) setRemoteImage(url);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [destination, hasUserPhoto, localCover]);
+
+  const cover = hasUserPhoto
+    ? { uri: userPhoto }
+    : localCover ||
+      (remoteImage ? { uri: remoteImage } : null);
+
   const type = trip?.tripType;
-  const icon = type === "BEACH" ? "sunny-outline" : type === "WINTER" ? "snow-outline" :
-    type === "CAMPING" ? "leaf-outline" : type === "BUSINESS" ? "briefcase-outline" : "airplane-outline";
+
+  const icon =
+    type === "BEACH"
+      ? "sunny-outline"
+      : type === "WINTER"
+      ? "snow-outline"
+      : type === "CAMPING"
+      ? "leaf-outline"
+      : type === "BUSINESS"
+      ? "briefcase-outline"
+      : "airplane-outline";
+
+  const [imageFailed, setImageFailed] = useState(false);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [cover?.uri, localCover]);
+
+  if (cover && !imageFailed) {
+    return (
+      <Image
+        source={cover}
+        style={{
+          height,
+          width: "100%",
+          backgroundColor: c.surfaceAlt,
+        }}
+        resizeMode="cover"
+        onError={() => setImageFailed(true)}
+      />
+    );
+  }
+
   return (
-    <View style={{ height, backgroundColor: c.surfaceAlt, justifyContent: "center", alignItems: "center", overflow: "hidden" }}>
-      <View style={{ position: "absolute", width: 240, height: 240, borderRadius: 120, left: -95, top: -125, backgroundColor: c.primaryLight }} />
-      <View style={{ position: "absolute", width: 160, height: 160, borderRadius: 80, right: -55, bottom: -75, backgroundColor: c.primaryLight }} />
-      <Ionicons name={icon} size={44} color={c.primary} />
+    <View
+      style={{
+        height,
+        backgroundColor: c.surfaceAlt,
+        justifyContent: "center",
+        alignItems: "center",
+        overflow: "hidden",
+      }}
+    >
+      <View
+        style={{
+          position: "absolute",
+          width: 240,
+          height: 240,
+          borderRadius: 120,
+          left: -95,
+          top: -125,
+          backgroundColor: c.primaryLight,
+        }}
+      />
+
+      <View
+        style={{
+          position: "absolute",
+          width: 160,
+          height: 160,
+          borderRadius: 80,
+          right: -55,
+          bottom: -75,
+          backgroundColor: c.primaryLight,
+        }}
+      />
+
+      <Ionicons
+        name={icon}
+        size={44}
+        color={c.primary}
+      />
     </View>
   );
 }
+
+
 
 export function TripHeroCard({ trip, onPress, compact = false }) {
   const { colors: c, language } = useTheme();

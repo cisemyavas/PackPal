@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Linking, Platform, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Linking, Modal, Platform, Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import MapView, { Marker, UrlTile } from "react-native-maps";
 import * as Location from "expo-location";
@@ -31,10 +31,21 @@ function MapButton({ icon, accessibilityLabel, onPress, disabled, colors }) {
 }
 
 /** CARTO PNG tiles rendered in react-native-maps, which is available in Expo Go. */
-export default function CartoMapRaster({ onSelectPlace, targetRegion, showGalataLabel = true, mapHeight = 268 }) {
+export default function CartoMapRaster({
+  onSelectPlace,
+  targetRegion,
+  showGalataLabel = true,
+  mapHeight = 268,
+  fullscreenMode = false,
+  onClose,
+}) {
   const { colors: c, resolvedMode, language } = useTheme();
   const tr = language !== "en";
   const mapRef = useRef(null);
+  const [fullscreen, setFullscreen] = useState(false);
+const [currentRegion, setCurrentRegion] = useState(
+  targetRegion || INITIAL_REGION
+);
 
   // Move the existing map only when the parent supplies a search result.
   useEffect(() => {
@@ -130,6 +141,9 @@ export default function CartoMapRaster({ onSelectPlace, targetRegion, showGalata
         ref={mapRef}
         style={{ flex: 1 }}
         initialRegion={INITIAL_REGION}
+        onRegionChangeComplete={(region) => {
+  setCurrentRegion(region);
+}}
         onMapReady={() => {
           if (targetRegion) mapRef.current?.animateToRegion(targetRegion, 750);
         }}
@@ -161,12 +175,54 @@ export default function CartoMapRaster({ onSelectPlace, targetRegion, showGalata
         </Marker> : null}
       </MapView>
       <View pointerEvents="box-none" style={{ position: "absolute", right: 12, top: 12 }}>
+        <MapButton
+  icon={fullscreenMode ? "contract-outline" : "expand-outline"}
+  accessibilityLabel={
+    fullscreenMode
+      ? (tr ? "Haritayı küçült" : "Minimize map")
+      : (tr ? "Haritayı büyüt" : "Expand map")
+  }
+  onPress={
+    fullscreenMode
+      ? onClose
+      : () => setFullscreen(true)
+  }
+  colors={c}
+/>
         <MapButton icon={locating ? "hourglass-outline" : "locate-outline"}
           accessibilityLabel={tr ? "Konumuma git" : "Find my location"}
           onPress={locateMe} disabled={locating} colors={c} />
         <MapButton icon="compass-outline"
           accessibilityLabel={tr ? "Galata Kulesi'ne dön" : "Back to Galata Tower"}
           onPress={focusGalata} colors={c} />
+          {!fullscreenMode && (
+  <Modal
+    visible={fullscreen}
+    animationType="slide"
+    presentationStyle="fullScreen"
+    onRequestClose={() => setFullscreen(false)}
+    statusBarTranslucent
+  >
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: c.background,
+        paddingTop: Platform.OS === "android" ? 36 : 54,
+        paddingBottom: 18,
+        paddingHorizontal: 8,
+      }}
+    >
+      <CartoMapRaster
+        fullscreenMode
+        mapHeight="100%"
+        targetRegion={currentRegion}
+        showGalataLabel={showGalataLabel}
+        onSelectPlace={onSelectPlace}
+        onClose={() => setFullscreen(false)}
+      />
+    </View>
+  </Modal>
+)}
       </View>
       {showGalataLabel ? <Pressable accessibilityRole="button" onPress={focusGalata}
         style={{ position: "absolute", left: 12, bottom: 38, backgroundColor: c.surface,
