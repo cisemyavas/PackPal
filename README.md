@@ -109,16 +109,13 @@ Follow the Expo CLI instructions to launch the application.
 
 Some native functionality may require an Expo development build.
 
+
 ## 📱 App Preview
 
-Screenshots of the following application screens will be added:
+| Home Dashboard | My Trips | Packing List |
+|:---:|:---:|:---:|
+| <img src="screenshots/home.png" width="230" alt="PackPal Home Dashboard"> | <img src="screenshots/trips.png" width="230" alt="PackPal My Trips"> | <img src="screenshots/packing.png" width="230" alt="PackPal Packing List"> |
 
-- Home Dashboard
-- Trip Management
-- Packing Lists
-- Collaborative Packing
-- Itinerary Planning
-- Interactive Discovery Map
 
 ## 📄 License
 
