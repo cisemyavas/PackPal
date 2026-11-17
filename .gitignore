@@ -64,3 +64,9 @@ packpal-*-backup-*/
 *.keystore
 google-services.json
 GoogleService-Info.plist
+
+# Local documentation and draft rules
+/AGENTS.md
+/FIREBASE_SETUP.md
+/firestore.itinerary.proposed.rules
+/firestore.sharedTrips.proposed.rules
